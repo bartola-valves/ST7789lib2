@@ -33,8 +33,8 @@ extern uint16_t _height; ///< Display height as modified by current rotation
 
 static int16_t cursor_y = 0;
 int16_t cursor_x = 0;
-uint8_t textsize_x = 4; // Desired magnification in X-axis for text
-uint8_t textsize_y = 4; // Desired magnification in Y-axis for text
+uint8_t textsize_x = 1; // Desired magnification in X-axis for text (default size 1)
+uint8_t textsize_y = 1; // Desired magnification in Y-axis for text (default size 1)
 uint16_t textcolor = GFX_WHITE;
 uint16_t textbgcolor = GFX_BLACK;
 uint16_t clearColour = GFX_BLACK;
@@ -553,4 +553,53 @@ void GFX_setTextSize(uint8_t size)
 {
     textsize_x = size;
     textsize_y = size;
+}
+
+void GFX_drawBitmap(int16_t x, int16_t y, const uint8_t *bitmap, int16_t w, int16_t h, uint16_t color, uint16_t bg)
+{
+    int16_t byteWidth = (w + 7) / 8; // Bitmap width in bytes
+    uint8_t byte = 0;
+
+    for (int16_t j = 0; j < h; j++, y++)
+    {
+        for (int16_t i = 0; i < w; i++)
+        {
+            if (i & 7)
+                byte <<= 1;
+            else
+                byte = bitmap[j * byteWidth + i / 8];
+
+            if (byte & 0x80)
+            {
+                GFX_drawPixel(x + i, y, color);
+            }
+            else
+            {
+                GFX_drawPixel(x + i, y, bg);
+            }
+        }
+    }
+}
+
+void GFX_drawBitmapMask(int16_t x, int16_t y, const uint8_t *bitmap, int16_t w, int16_t h, uint16_t color)
+{
+    int16_t byteWidth = (w + 7) / 8; // Bitmap width in bytes
+    uint8_t byte = 0;
+
+    for (int16_t j = 0; j < h; j++, y++)
+    {
+        for (int16_t i = 0; i < w; i++)
+        {
+            if (i & 7)
+                byte <<= 1;
+            else
+                byte = bitmap[j * byteWidth + i / 8];
+
+            if (byte & 0x80)
+            {
+                GFX_drawPixel(x + i, y, color);
+            }
+            // Don't draw background pixels - they remain transparent
+        }
+    }
 }
