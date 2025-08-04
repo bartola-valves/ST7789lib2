@@ -51,33 +51,33 @@ int main()
         // Clear screen first
         GFX_fillScreen(0x0000);
 
-        // Set smaller text size - try size 1 instead of default 4
-        GFX_setTextSize(1);
+        // setting the size to 2 for better readability
+        GFX_setTextSize(2);
 
         // Set text color
         GFX_setTextColor(0xFFFF);
 
-        // Text at top
+        // Text at top with proper spacing for size 2 font
         GFX_setCursor(5, 5);
         GFX_printf("Frame: %d", c++);
 
-        GFX_setCursor(5, 15); // Small spacing since font is smaller
+        GFX_setCursor(5, 25); // More spacing for size 2 font (20px between lines)
         GFX_printf("Size: %dx%d", lcd_width, lcd_height);
 
-        GFX_setCursor(5, 25);
-        GFX_printf("Font size: 1");
+        GFX_setCursor(5, 45);
+        GFX_printf("Font size: 2");
 
-        // Draw colored rectangles with good spacing
-        GFX_fillRect(10, 40, 40, 12, 0xF800); // Red rectangle
-        GFX_fillRect(10, 55, 40, 12, 0x07E0); // Green rectangle
-        GFX_fillRect(10, 70, 40, 12, 0x001F); // Blue rectangle
+        // Draw colored rectangles with more space below text
+        GFX_fillRect(10, 70, 40, 12, 0xF800);  // Red rectangle - moved down
+        GFX_fillRect(10, 90, 40, 12, 0x07E0);  // Green rectangle - more spacing
+        GFX_fillRect(10, 110, 40, 12, 0x001F); // Blue rectangle - more spacing
 
-        // Add labels
-        GFX_setCursor(60, 42);
-        GFX_printf("Red");
-        GFX_setCursor(60, 57);
-        GFX_printf("Green");
+        // Add labels with proper alignment
         GFX_setCursor(60, 72);
+        GFX_printf("Red");
+        GFX_setCursor(60, 92);
+        GFX_printf("Green");
+        GFX_setCursor(60, 112);
         GFX_printf("Blue");
 
         // Draw border to see bounds
