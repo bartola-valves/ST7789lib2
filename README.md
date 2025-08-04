@@ -325,7 +325,7 @@ Feel free to submit issues and enhancement requests!
 
 ## Changelog
 
-### v1.0 (2025-01-XX)
+### v1.0 (04/08/2025)
 - Initial release
 - Support for 170x320 displays with automatic offset correction
 - Framebuffer-based graphics system
