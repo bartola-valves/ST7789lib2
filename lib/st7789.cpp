@@ -1,4 +1,9 @@
-// modified by Ale Moglia
+// modified by Ale Moglia / @bartola-valves valves@bartola.co.uk
+// version 0.1 - STT789 display driver for Raspberry Pi Pico
+// This library provides hardware-specific functions for controlling ST7789 TFT LCD displays
+// via SPI interface on the Raspberry Pi Pico microcontroller.
+// date: 4th August 2025
+//
 
 #include "st7789.h"
 #include "pico/stdlib.h"

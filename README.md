@@ -2,6 +2,9 @@
 
 A comprehensive library for controlling ST7789 TFT LCD displays with the Raspberry Pi Pico microcontroller. This library provides both low-level hardware control and high-level graphics functions with framebuffer support.
 
+Developed for Raspberry Pico or RP2040 boards using the Pico SDK
+@bartola-valves valves@bartola.co.uk
+
 ## Features
 
 - ✅ **Hardware SPI interface** for fast communication
