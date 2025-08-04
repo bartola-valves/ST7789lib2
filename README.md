@@ -319,6 +319,12 @@ int main() {
 
 This library is based on Adafruit's GFX library and modified for Raspberry Pi Pico.
 
+## References 
+
+
+https://github.com/libdriver/st7789
+
+
 ## Contributing
 
 Feel free to submit issues and enhancement requests!

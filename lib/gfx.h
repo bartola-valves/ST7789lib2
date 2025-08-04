@@ -243,4 +243,54 @@ void GFX_drawBitmap(int16_t x, int16_t y, const uint8_t *bitmap, int16_t w, int1
  */
 void GFX_drawBitmapMask(int16_t x, int16_t y, const uint8_t *bitmap, int16_t w, int16_t h, uint16_t color);
 
+// Color Utility Functions
+/**
+ * @brief Convert RGB888 (8-bit per channel) to RGB565 format
+ * @param r Red component (0-255)
+ * @param g Green component (0-255)
+ * @param b Blue component (0-255)
+ * @return 16-bit RGB565 color value
+ */
+uint16_t GFX_color565(uint8_t r, uint8_t g, uint8_t b);
+
+/**
+ * @brief Extract red component from RGB565 color
+ * @param color RGB565 color value
+ * @return Red component (0-255)
+ */
+uint8_t GFX_getRed(uint16_t color);
+
+/**
+ * @brief Extract green component from RGB565 color
+ * @param color RGB565 color value
+ * @return Green component (0-255)
+ */
+uint8_t GFX_getGreen(uint16_t color);
+
+/**
+ * @brief Extract blue component from RGB565 color
+ * @param color RGB565 color value
+ * @return Blue component (0-255)
+ */
+uint8_t GFX_getBlue(uint16_t color);
+
+// Circle Functions
+/**
+ * @brief Draw a circle outline
+ * @param x0 Center X coordinate
+ * @param y0 Center Y coordinate
+ * @param r Radius in pixels
+ * @param color 16-bit RGB565 color
+ */
+void GFX_drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+
+/**
+ * @brief Draw a filled circle
+ * @param x0 Center X coordinate
+ * @param y0 Center Y coordinate
+ * @param r Radius in pixels
+ * @param color 16-bit RGB565 color
+ */
+void GFX_fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+
 #endif

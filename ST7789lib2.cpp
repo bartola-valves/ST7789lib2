@@ -143,22 +143,82 @@ int main()
         GFX_setCursor(5, 45);
         GFX_printf("Font size: 2");
 
-        // Draw demonstration rectangles with primary colors
-        GFX_fillRect(10, 70, 40, 12, 0xF800);  // Red rectangle
-        GFX_fillRect(10, 90, 40, 12, 0x07E0);  // Green rectangle
-        GFX_fillRect(10, 110, 40, 12, 0x001F); // Blue rectangle
+        // Alternate between three display modes every 3 seconds
+        int mode = (c / 3) % 3; // Switch every 3 frames, 3 modes total
 
-        // Add color labels next to rectangles
-        GFX_setCursor(60, 72);
-        GFX_printf("Red");
-        GFX_setCursor(60, 92);
-        GFX_printf("Green");
-        GFX_setCursor(60, 112);
-        GFX_printf("Blue");
+        if (mode == 0)
+        {
+            // Mode 1: Basic rectangles and color demo
+            GFX_setCursor(5, 65);
+            GFX_printf("Mode: Basic");
 
-        // Draw Bartola logo in the center area
-        // Position logo in center of display: (170-170)/2=0, start at y=140
-        drawBartolaLogo(0, 140, 0xFFFF); // White logo
+            // Draw demonstration rectangles with primary colors
+            GFX_fillRect(10, 85, 50, 15, 0xF800);  // Red rectangle
+            GFX_fillRect(10, 105, 50, 15, 0x07E0); // Green rectangle
+            GFX_fillRect(10, 125, 50, 15, 0x001F); // Blue rectangle
+
+            // Add color labels next to rectangles
+            GFX_setCursor(70, 87);
+            GFX_printf("Red");
+            GFX_setCursor(70, 107);
+            GFX_printf("Green");
+            GFX_setCursor(70, 127);
+            GFX_printf("Blue");
+        }
+        else if (mode == 1)
+        {
+            // Mode 2: New features - custom colors and circles
+            GFX_setCursor(5, 65);
+            GFX_printf("Mode: New");
+
+            // Demonstrate new color utility functions
+            uint16_t custom_color = GFX_color565(255, 165, 0); // Orange color
+            uint16_t purple = GFX_color565(128, 0, 128);       // Purple color
+            uint16_t teal = GFX_color565(0, 128, 128);         // Teal color
+
+            // Custom color rectangles
+            GFX_fillRect(10, 85, 50, 15, custom_color);
+            GFX_fillRect(10, 105, 50, 15, purple);
+            GFX_fillRect(10, 125, 50, 15, teal);
+
+            // Color labels - keep them shorter to fit
+            GFX_setCursor(70, 87);
+            GFX_printf("Orange");
+            GFX_setCursor(70, 107);
+            GFX_printf("Purple");
+            GFX_setCursor(70, 127);
+            GFX_printf("Teal");
+
+            // Demonstrate circle drawing functions with plenty of space
+            GFX_drawCircle(35, 155, 12, 0xFFFF);       // White circle outline
+            GFX_fillCircle(85, 155, 10, 0xF81F);       // Magenta filled circle
+            GFX_fillCircle(135, 155, 8, custom_color); // Orange filled circle
+
+            // Circle labels
+            GFX_setCursor(5, 175);
+            GFX_setTextSize(1);
+            GFX_printf("Outline   Filled   Custom");
+            GFX_setTextSize(2); // Reset text size
+        }
+        else
+        {
+            // Mode 3: Logo-only mode - centered and properly displayed
+            GFX_setCursor(5, 65);
+            GFX_printf("Mode: Logo");
+
+            // Center the logo vertically in the available space
+            // Available space: from y=85 to y=315 (230 pixels)
+            // Logo height: 207 pixels
+            // Center position: 85 + (230-207)/2 = 85 + 11.5 ≈ 97
+            drawBartolaLogo(0, 97, 0xFFFF); // White logo, centered
+        }
+
+        // // Draw Bartola logo in the lower area (only for modes 0 and 1)
+        // if (mode != 2)
+        // {
+        //     // Position logo in center of display: (170-170)/2=0, start at y=190
+        //     drawBartolaLogo(0, 190, 0xFFFF); // White logo
+        // }
 
         // Draw border around entire display area for alignment verification
         GFX_drawRect(0, 0, lcd_width - 1, lcd_height - 1, 0x07E0);
@@ -166,8 +226,9 @@ int main()
         // Transfer framebuffer contents to physical display
         GFX_flush();
 
-        // Log frame completion to UART
-        printf("Frame %d rendered successfully\n", c - 1);
+        // Log frame completion to UART with mode information
+        const char *mode_names[] = {"Basic Colors", "New Features", "Logo Only"};
+        printf("Frame %d rendered successfully (Mode: %s)\n", c - 1, mode_names[mode]);
 
         // Wait 1 second before next frame
         sleep_ms(1000);
