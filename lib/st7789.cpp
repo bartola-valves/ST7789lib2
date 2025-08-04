@@ -263,6 +263,12 @@ void LCD_initDisplay(uint16_t width, uint16_t height)
         _colstart = (int)((240 - width + 1) / 2);
         _colstart2 = (int)((240 - width) / 2);
     }
+    else if (width == 170 && height == 320)
+    {
+        // 170x320 display - center the 170px width in 240px controller
+        _rowstart = _rowstart2 = 0;  // No row offset needed
+        _colstart = _colstart2 = 35; // Center horizontally: (240-170)/2 = 35
+    }
     else
     {
         // 1.3", 1.54", and 2.0" displays
