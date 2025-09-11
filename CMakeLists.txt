@@ -46,11 +46,11 @@ pico_set_program_version(ST7789lib2 "0.1")
 pico_enable_stdio_uart(ST7789lib2 1)
 pico_enable_stdio_usb(ST7789lib2 0)
 
-# pico UART pins changed to 16 and 17
-target_compile_definitions(ST7789lib2 PRIVATE
-	PICO_DEFAULT_UART_TX_PIN=16
-	PICO_DEFAULT_UART_RX_PIN=17
-	)
+# # pico UART pins changed to 16 and 17
+# target_compile_definitions(ST7789lib2 PRIVATE
+# 	PICO_DEFAULT_UART_TX_PIN=16
+# 	PICO_DEFAULT_UART_RX_PIN=17
+# 	)
 
 # Add the standard library to the build
 target_link_libraries(ST7789lib2

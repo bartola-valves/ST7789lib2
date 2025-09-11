@@ -9,8 +9,8 @@
  *
  * Hardware Configuration:
  * - Display: 170x320 ST7789 TFT LCD
- * - SPI: spi0 (GPIO2=SCK, GPIO3=MOSI)
- * - Control pins: DC=GPIO4, CS=GPIO1, RST=GPIO5
+ * - SPI: spi1 (GPIO10=SCK, GPIO11=MOSI)
+ * - Control pins: DC=GPIO8, CS=GPIO9, RST=GPIO6
  * - Blank pin connected to 3.3V
  * - UART Debug: TX=GPIO16, RX=GPIO17 (115200 baud)
  * - Backlight: BLK pin connected to 3.3V
@@ -87,13 +87,13 @@ int main()
     printf("Starting ST7789 test with optimized font size...\n");
 
     // Configure SPI peripheral instance
-    spi_inst_t *st7789_spi = spi0;
-    printf("SPI peripheral set to spi0\n");
+    spi_inst_t *st7789_spi = spi1;
+    printf("SPI peripheral set to spi1\n");
 
     // Configure GPIO pins for ST7789 display
     // Parameters: DC, CS, RST, SCK, TX (MOSI)
-    LCD_setPins(4, 1, 5, 2, 3);
-    printf("Pins configured: DC=GPIO4, CS=GPIO1, RST=GPIO5, SCK=GPIO2, TX=GPIO3\n");
+    LCD_setPins(8, 9, 6, 10, 11);
+    printf("Pins configured: DC=GPIO8, CS=GPIO9, RST=GPIO6, SCK=GPIO10, TX=GPIO11\n");
 
     // Assign SPI peripheral to LCD driver
     LCD_setSPIperiph(st7789_spi);
