@@ -1,19 +1,18 @@
 /**
  * @file ST7789lib2.cpp
- * @brief ST7789 TFT LCD Display Test Program
+ * @brief ST7789 TFT LCD Display Hello World Test
  * @author Ale Moglia
  * @date 2025
  *
- * Test program demonstrating the ST7789 display library functionality.
- * Displays text, colored rectangles, and a border on a 170x320 ST7789 TFT LCD.
+ * Simple test program for ST7789 display functionality.
+ * Displays direct pixels on a 76x264 ST7789 TFT LCD.
  *
  * Hardware Configuration:
- * - Display: 170x320 ST7789 TFT LCD
+ * - Display: 76x264 ST7789 TFT LCD
  * - SPI: spi1 (GPIO10=SCK, GPIO11=MOSI)
  * - Control pins: DC=GPIO8, CS=GPIO9, RST=GPIO6
- * - Blank pin connected to 3.3V
- * - UART Debug: TX=GPIO16, RX=GPIO17 (115200 baud)
- * - Backlight: BLK pin connected to 3.3V
+ * - UART Debug: TX=GPIO1, RX=GPIO0 (115200 baud)
+ * - Backlight: BLK pin connected to GND
  */
 
 #include <stdio.h>
@@ -21,70 +20,26 @@
 #include "hardware/spi.h"
 #include "lib/st7789.h"
 #include "lib/gfx.h"
-#include "bartola_logo_bitmap.h"
 
-// UART pins GPIO16 (TX) and GPIO17 (RX) are configured in CMakeLists.txt
-
-/** @brief Display dimensions for 170x320 ST7789 LCD */
-const int lcd_width = 170;  ///< Display width in pixels
-const int lcd_height = 320; ///< Display height in pixels
-
-/**
- * @brief Draw the Bartola logo at specified position
- * @param x X coordinate for top-left corner
- * @param y Y coordinate for top-left corner
- * @param color Color for logo foreground
- */
-void drawBartolaLogo(int x, int y, uint16_t color)
-{
-    // Draw the actual Bartola logo bitmap with transparent background
-    GFX_drawBitmapMask(x, y, bartola_logo_bitmap, BARTOLA_LOGO_WIDTH, BARTOLA_LOGO_HEIGHT, color);
-}
-
-/**
- * @brief Draw the Bartola logo with scaling
- * @param x X coordinate for top-left corner
- * @param y Y coordinate for top-left corner
- * @param color Color for logo foreground
- * @param scale Scaling factor (1=normal, 2=double size, etc.)
- */
-void drawBartolaLogoScaled(int x, int y, uint16_t color, int scale)
-{
-    if (scale <= 1)
-    {
-        drawBartolaLogo(x, y, color);
-        return;
-    }
-
-    // For now, scaled drawing just draws the normal logo
-    // Implementing pixel-perfect scaling would require more complex code
-    drawBartolaLogo(x, y, color);
-
-    // Add a small indicator that this is scaled (for debugging)
-    GFX_setCursor(x, y - 15);
-    GFX_setTextSize(1);
-    GFX_setTextColor(color);
-    GFX_printf("x%d", scale);
-    GFX_setTextSize(2); // Reset text size
-}
+/** @brief Display dimensions for 76x264 ST7789 LCD - CORRECTED ORIENTATION */
+const int lcd_width = 76;   ///< Display width in pixels (narrow side)
+const int lcd_height = 264; ///< Display height in pixels (tall side)
 
 /**
  * @brief Main program entry point
  *
- * Initializes the ST7789 display and demonstrates various graphics functions
- * including text rendering, shape drawing, and color display.
+ * Initializes the ST7789 display and demonstrates basic pixel drawing.
  *
  * @return int Program exit status (never reached due to infinite loop)
  */
 
 int main()
 {
-    int rotation_test = 0;
     stdio_init_all();
 
     // Allow time for UART initialization and connection
     sleep_ms(2000);
-    printf("Starting ST7789 test with optimized font size...\n");
+    printf("Starting ST7789 DIRECT PIXEL test for 76x264 display...\n");
 
     // Configure SPI peripheral instance
     spi_inst_t *st7789_spi = spi1;
@@ -95,142 +50,195 @@ int main()
     LCD_setPins(8, 9, 6, 10, 11);
     printf("Pins configured: DC=GPIO8, CS=GPIO9, RST=GPIO6, SCK=GPIO10, TX=GPIO11\n");
 
+    // BLK connected to GPIO12 - Active LOW backlight (LOW = ON, HIGH = OFF)
+    gpio_init(12);
+    gpio_set_dir(12, GPIO_OUT);
+    gpio_put(12, 0); // Set LOW to turn backlight ON (active low)
+    printf("Backlight GPIO12 set to LOW (backlight ON) - active low control\n");
+
     // Assign SPI peripheral to LCD driver
     LCD_setSPIperiph(st7789_spi);
     printf("SPI peripheral configured for LCD\n");
 
     printf("Initializing display...\n");
-    // Initialize display with automatic offset correction for 170x320 displays
+    // Use standard ST7789 initialization with 76x264 fix
     LCD_initDisplay(lcd_width, lcd_height);
     printf("Display initialized with %dx%d resolution\n", lcd_width, lcd_height);
 
-    // Set display orientation - 180° rotation for correct viewing
-    LCD_setRotation(2);
-    printf("Display rotation set to 180 degrees\n");
+    // Turn OFF hardware color inversion for correct colors
+    printf("Turning OFF hardware color inversion...\n");
+    // Use INVOFF to get normal colors (since INVON was causing white background)
+    ST7789_SendCommand(0x20, NULL, 0); // INVOFF - inversion OFF
+    printf("Hardware color inversion disabled (INVOFF)\n");
 
-    printf("Creating framebuffer...\n");
-    // Allocate framebuffer memory for graphics operations
-    GFX_createFramebuf();
-    printf("Framebuffer created successfully\n");
-
-    printf("Bartola logo loaded: %dx%d pixels (%d bytes)\n",
-           BARTOLA_LOGO_WIDTH, BARTOLA_LOGO_HEIGHT,
-           (BARTOLA_LOGO_WIDTH * BARTOLA_LOGO_HEIGHT + 7) / 8);
-
-    printf("Starting graphics test loop...\n");
-    int c = 0; ///< Frame counter for animation
+    printf("Starting SIMPLE area test...\n");
 
     while (1)
     {
-        // Clear framebuffer to black
-        GFX_fillScreen(0x0000);
+        printf("=== COMPREHENSIVE SCREEN CLEARING TEST ===\n");
 
-        // Configure text rendering - size 2 provides good readability
-        GFX_setTextSize(2);
-
-        // Set text color to white
-        GFX_setTextColor(0xFFFF);
-
-        // Display frame information at top of screen
-        GFX_setCursor(5, 5);
-        GFX_printf("Frame: %d", c++);
-
-        // Display screen dimensions
-        GFX_setCursor(5, 25);
-        GFX_printf("Size: %dx%d", lcd_width, lcd_height);
-
-        // Display current font size
-        GFX_setCursor(5, 45);
-        GFX_printf("Font size: 2");
-
-        // Alternate between three display modes every 3 seconds
-        int mode = (c / 3) % 3; // Switch every 3 frames, 3 modes total
-
-        if (mode == 0)
+        auto drawRawPixel = [](uint16_t x, uint16_t y, uint16_t color)
         {
-            // Mode 1: Basic rectangles and color demo
-            GFX_setCursor(5, 65);
-            GFX_printf("Mode: Basic");
+            gpio_put(9, 0);
+            gpio_put(8, 0);
+            uint8_t caset_cmd = 0x2A;
+            spi_write_blocking(spi1, &caset_cmd, 1);
+            gpio_put(8, 1);
+            uint8_t caset_data[] = {(uint8_t)(x >> 8), (uint8_t)(x & 0xFF), (uint8_t)(x >> 8), (uint8_t)(x & 0xFF)};
+            spi_write_blocking(spi1, caset_data, 4);
 
-            // Draw demonstration rectangles with primary colors
-            GFX_fillRect(10, 85, 50, 15, 0xF800);  // Red rectangle
-            GFX_fillRect(10, 105, 50, 15, 0x07E0); // Green rectangle
-            GFX_fillRect(10, 125, 50, 15, 0x001F); // Blue rectangle
+            gpio_put(8, 0);
+            uint8_t raset_cmd = 0x2B;
+            spi_write_blocking(spi1, &raset_cmd, 1);
+            gpio_put(8, 1);
+            uint8_t raset_data[] = {(uint8_t)(y >> 8), (uint8_t)(y & 0xFF), (uint8_t)(y >> 8), (uint8_t)(y & 0xFF)};
+            spi_write_blocking(spi1, raset_data, 4);
 
-            // Add color labels next to rectangles
-            GFX_setCursor(70, 87);
-            GFX_printf("Red");
-            GFX_setCursor(70, 107);
-            GFX_printf("Green");
-            GFX_setCursor(70, 127);
-            GFX_printf("Blue");
-        }
-        else if (mode == 1)
+            gpio_put(8, 0);
+            uint8_t ramwr_cmd = 0x2C;
+            spi_write_blocking(spi1, &ramwr_cmd, 1);
+            gpio_put(8, 1);
+            spi_set_format(spi1, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+            spi_write16_blocking(spi1, &color, 1);
+            spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+            gpio_put(9, 1);
+        };
+
+        printf("STEP 1: COMPLETE clearing - extending to cover bottom 20%...\n");
+
+        // Based on your feedback: 80% cleared, bottom missing
+        // Extend coordinate ranges to cover the entire display
+        printf("Clearing EXTENDED coordinate ranges to cover full display...\n");
+
+        // Clear range 1: Top area (0,0 to 320,160)
+        printf("Clearing range 1: (0,0) to (320,160)...\n");
+        for (int y = 0; y < 160; y++)
         {
-            // Mode 2: New features - custom colors and circles
-            GFX_setCursor(5, 65);
-            GFX_printf("Mode: New");
-
-            // Demonstrate new color utility functions
-            uint16_t custom_color = GFX_color565(255, 165, 0); // Orange color
-            uint16_t purple = GFX_color565(128, 0, 128);       // Purple color
-            uint16_t teal = GFX_color565(0, 128, 128);         // Teal color
-
-            // Custom color rectangles
-            GFX_fillRect(10, 85, 50, 15, custom_color);
-            GFX_fillRect(10, 105, 50, 15, purple);
-            GFX_fillRect(10, 125, 50, 15, teal);
-
-            // Color labels - keep them shorter to fit
-            GFX_setCursor(70, 87);
-            GFX_printf("Orange");
-            GFX_setCursor(70, 107);
-            GFX_printf("Purple");
-            GFX_setCursor(70, 127);
-            GFX_printf("Teal");
-
-            // Demonstrate circle drawing functions with plenty of space
-            GFX_drawCircle(35, 155, 12, 0xFFFF);       // White circle outline
-            GFX_fillCircle(85, 155, 10, 0xF81F);       // Magenta filled circle
-            GFX_fillCircle(135, 155, 8, custom_color); // Orange filled circle
-
-            // Circle labels
-            GFX_setCursor(5, 175);
-            GFX_setTextSize(1);
-            GFX_printf("Outline   Filled   Custom");
-            GFX_setTextSize(2); // Reset text size
-        }
-        else
-        {
-            // Mode 3: Logo-only mode - centered and properly displayed
-            GFX_setCursor(5, 65);
-            GFX_printf("Mode: Logo");
-
-            // Center the logo vertically in the available space
-            // Available space: from y=85 to y=315 (230 pixels)
-            // Logo height: 207 pixels
-            // Center position: 85 + (230-207)/2 = 85 + 11.5 ≈ 97
-            drawBartolaLogo(0, 97, 0xFFFF); // White logo, centered
+            for (int x = 0; x < 320; x++)
+            {
+                drawRawPixel(x, y, 0x0000); // Black
+            }
+            if (y % 20 == 0)
+                printf("Top area row %d/160\n", y);
         }
 
-        // // Draw Bartola logo in the lower area (only for modes 0 and 1)
-        // if (mode != 2)
-        // {
-        //     // Position logo in center of display: (170-170)/2=0, start at y=190
-        //     drawBartolaLogo(0, 190, 0xFFFF); // White logo
-        // }
+        // Clear range 2: Middle area (0,160 to 320,264)
+        printf("Clearing range 2: (0,160) to (320,264)...\n");
+        for (int y = 160; y < 264; y++)
+        {
+            for (int x = 0; x < 320; x++)
+            {
+                drawRawPixel(x, y, 0x0000); // Black
+            }
+            if ((y - 160) % 20 == 0)
+                printf("Middle area row %d/104\n", y - 160);
+        }
 
-        // Draw border around entire display area for alignment verification
-        GFX_drawRect(0, 0, lcd_width - 1, lcd_height - 1, 0x07E0);
+        // Clear range 3: EXTENDED bottom area (0,264 to 320,350) - for missing 20%
+        printf("Clearing range 3: EXTENDED bottom (0,264) to (320,350) - missing 20%...\n");
+        for (int y = 264; y < 350; y++)
+        {
+            for (int x = 0; x < 320; x++)
+            {
+                drawRawPixel(x, y, 0x0000); // Black
+            }
+            if ((y - 264) % 20 == 0)
+                printf("Extended bottom row %d/86\n", y - 264);
+        }
 
-        // Transfer framebuffer contents to physical display
-        GFX_flush();
+        // Clear range 4: Even more extended (0,350 to 320,400) - just in case
+        printf("Clearing range 4: Final extension (0,350) to (320,400)...\n");
+        for (int y = 350; y < 400; y++)
+        {
+            for (int x = 0; x < 320; x++)
+            {
+                drawRawPixel(x, y, 0x0000); // Black
+            }
+            if ((y - 350) % 10 == 0)
+                printf("Final extension row %d/50\n", y - 350);
+        }
 
-        // Log frame completion to UART with mode information
-        const char *mode_names[] = {"Basic Colors", "New Features", "Logo Only"};
-        printf("Frame %d rendered successfully (Mode: %s)\n", c - 1, mode_names[mode]);
+        printf("COMPLETE clearing finished! Bottom 20% should be covered now!\n");
+        sleep_ms(3000);
 
-        // Wait 1 second before next frame
-        sleep_ms(1000);
+        printf("STEP 2: Drawing all rectangles in the SAME working coordinate area...\n");
+
+        // Since you can see the GREEN box, let's put all rectangles in that same area
+        // The green box was at (80,40) to (100,60) - that range works!
+
+        printf("Drawing all colors near the visible GREEN box area...\n");
+
+        // RED rectangle - right next to the green box
+        printf("Drawing RED rectangle at (80,70) to (100,90)...\n");
+        for (int y = 70; y < 90; y++)
+        {
+            for (int x = 80; x < 100; x++)
+            {
+                drawRawPixel(x, y, 0xF800); // RED
+            }
+        }
+
+        // BLUE rectangle - below the red
+        printf("Drawing BLUE rectangle at (80,100) to (100,120)...\n");
+        for (int y = 100; y < 120; y++)
+        {
+            for (int x = 80; x < 100; x++)
+            {
+                drawRawPixel(x, y, 0x001F); // BLUE
+            }
+        }
+
+        // YELLOW rectangle - below the blue
+        printf("Drawing YELLOW rectangle at (80,130) to (100,150)...\n");
+        for (int y = 130; y < 150; y++)
+        {
+            for (int x = 80; x < 100; x++)
+            {
+                drawRawPixel(x, y, 0xFFE0); // YELLOW
+            }
+        }
+
+        // WHITE rectangle - below the yellow
+        printf("Drawing WHITE rectangle at (80,160) to (100,180)...\n");
+        for (int y = 160; y < 180; y++)
+        {
+            for (int x = 80; x < 100; x++)
+            {
+                drawRawPixel(x, y, 0xFFFF); // WHITE
+            }
+        }
+
+        // CYAN rectangle - to the left of green
+        printf("Drawing CYAN rectangle at (60,40) to (75,60)...\n");
+        for (int y = 40; y < 60; y++)
+        {
+            for (int x = 60; x < 75; x++)
+            {
+                drawRawPixel(x, y, 0x07FF); // CYAN
+            }
+        }
+
+        // MAGENTA rectangle - to the right of green
+        printf("Drawing MAGENTA rectangle at (105,40) to (125,60)...\n");
+        for (int y = 40; y < 60; y++)
+        {
+            for (int x = 105; x < 125; x++)
+            {
+                drawRawPixel(x, y, 0xF81F); // MAGENTA
+            }
+        }
+
+        printf("COLOR RECTANGLES ARRANGED AROUND WORKING AREA!\n");
+        printf("You should now see multiple colored rectangles:\n");
+        printf("- GREEN (original position)\n");
+        printf("- RED (below green)\n");
+        printf("- BLUE (below red)\n");
+        printf("- YELLOW (below blue)\n");
+        printf("- WHITE (below yellow)\n");
+        printf("- CYAN (left of green)\n");
+        printf("- MAGENTA (right of green)\n");
+        printf("How many colored rectangles can you see?\n");
+
+        sleep_ms(15000);
     }
 }
