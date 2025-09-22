@@ -116,7 +116,7 @@ int main()
             gpio_put(9, 1);
         };
 
-        // FAST CLEAR SCREEN function - using bulk write
+        // OPTIMIZED FAST CLEAR SCREEN function - with SPI speed boost
         auto fastClearScreen = [](uint16_t color)
         {
             printf("FAST CLEAR: Setting display window to full screen...\n");
@@ -148,47 +148,53 @@ int main()
             spi_write_blocking(spi1, &ramwr_cmd, 1);
             gpio_put(8, 1);
 
-            printf("FAST CLEAR: Writing color data in bulk...\n");
+            printf("FAST CLEAR: Boosting SPI speed and writing data...\n");
+
+            // BOOST SPI SPEED FOR BULK TRANSFER (breadboard-safe)
+            // Save current speed and boost to breadboard-safe maximum
+            uint32_t old_baudrate = spi_get_baudrate(spi1);
+            printf("Current SPI speed: %u Hz (%.1f MHz)\n", old_baudrate, old_baudrate / 1000000.0);
+
+            // Try breadboard-safe maximum SPI speed (10 MHz)
+            uint32_t new_baudrate = spi_set_baudrate(spi1, 10000000);
+            printf("Boosted SPI speed: %u Hz (%.1f MHz) - breadboard safe\n", new_baudrate, new_baudrate / 1000000.0);
 
             // Switch to 16-bit SPI mode
             spi_set_format(spi1, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
-            // Create buffer for bulk write (1000 pixels at a time)
-            const int buffer_size = 1000;
+            // Create a large buffer - 4KB (2048 pixels)
+            const int buffer_size = 2048;
             uint16_t color_buffer[buffer_size];
+
+            // Fill buffer with color
             for (int i = 0; i < buffer_size; i++)
             {
                 color_buffer[i] = color;
             }
 
-            // Calculate total pixels (320 x 400 = 128,000 pixels)
-            const int total_pixels = 320 * 400;
-            const int chunks = total_pixels / buffer_size;
+            // Calculate total pixels and chunks
+            const int total_pixels = 320 * 400;                      // 128,000 pixels
+            const int full_chunks = total_pixels / buffer_size;      // 62 chunks
+            const int remaining_pixels = total_pixels % buffer_size; // 512 pixels
 
-            // Write in chunks for speed
-            for (int chunk = 0; chunk < chunks; chunk++)
+            // Write full chunks at maximum speed
+            for (int chunk = 0; chunk < full_chunks; chunk++)
             {
                 spi_write16_blocking(spi1, color_buffer, buffer_size);
-
-                if (chunk % 20 == 0)
-                {
-                    printf("FAST CLEAR: Chunk %d/%d (%.1f%%)\n",
-                           chunk, chunks, (float)chunk / chunks * 100);
-                }
             }
 
             // Write remaining pixels
-            int remaining = total_pixels % buffer_size;
-            if (remaining > 0)
+            if (remaining_pixels > 0)
             {
-                spi_write16_blocking(spi1, color_buffer, remaining);
+                spi_write16_blocking(spi1, color_buffer, remaining_pixels);
             }
 
-            // Switch back to 8-bit SPI mode
+            // Restore original SPI settings
+            spi_set_baudrate(spi1, old_baudrate);
             spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
             gpio_put(9, 1);
 
-            printf("FAST CLEAR: Complete! Screen cleared in bulk.\n");
+            printf("FAST CLEAR: Complete! Used %d chunks at %u Hz.\n", full_chunks + (remaining_pixels > 0 ? 1 : 0), new_baudrate);
         };
 
         printf("STEP 1: FAST CLEAR SCREEN TEST...\n");
