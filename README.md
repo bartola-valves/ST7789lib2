@@ -1,340 +1,203 @@
-# ST7789 Display Library for Raspberry Pi Pico
+# ST7789v Display Library for Raspberry Pi Pico
 
-A comprehensive library for controlling ST7789 TFT LCD displays with the Raspberry Pi Pico microcontroller. This library provides both low-level hardware control and high-level graphics functions with framebuffer support.
-
-Developed for Raspberry Pico or RP2040 boards using the Pico SDK
-@bartola-valves valves@bartola.co.uk
+A highly optimized display library for ST7789v variant TFT LCD displays, specifically tuned for 76×264 pixel displays commonly used in embedded applications.
 
 ## Features
 
-- ✅ **Hardware SPI interface** for fast communication
-- ✅ **Framebuffer support** for smooth graphics operations
-- ✅ **Multiple display sizes** with automatic offset correction
-- ✅ **Text rendering** with variable font sizes
-- ✅ **Shape drawing** (lines, rectangles, circles)
-- ✅ **Color support** (16-bit RGB565)
-- ✅ **Display rotation** (0°, 90°, 180°, 270°)
-- ✅ **printf-style text output**
+- **Optimized for ST7789v**: Specifically designed for ST7789v display controller variant
+- **Empirically Tuned**: Coordinate mappings discovered through real hardware testing
+- **Complete Graphics Support**: Pixel drawing, rectangles, text rendering
+- **Built-in Font System**: 5×7 bitmap font with A-Z, 0-9, and symbols
+- **Hardware Optimization**: Direct SPI communication with proper CS/DC control
+- **Color Management**: Automatic color inversion handling (INVOFF for ST7789v)
+- **Coordinate Translation**: Automatic mapping from logical to display coordinates
 
-## Supported Display Sizes
+## Hardware Specifications
 
-- 170x320 pixels (tested and optimized)
-- 172x320 pixels (1.47" displays)
-- 240x280 pixels (1.69" displays)  
-- 135x240 pixels (1.14" displays)
-- 240x320 pixels (standard ST7789)
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| Physical Size | 76×264 pixels | Physical display dimensions |
+| Rotated Size | 284×76 pixels | Dimensions after 90° rotation |
+| Interface | MIPI SPI | Display communication protocol |
+| Color Depth | 16-bit RGB565 | 65,536 colors |
+| Width Offset | 18 pixels | Hardware coordinate offset |
+| Height Offset | 82 pixels | Hardware coordinate offset |
+| Working Range | 65×210 pixels | Usable display area |
 
-## Hardware Requirements
+## Pin Configuration
 
-### Display Connections
-
-| Display Pin | Pico GPIO | Function |
-|-------------|-----------|----------|
-| VCC         | 3.3V      | Power supply |
-| GND         | GND       | Ground |
-| SCL/SCK     | GPIO2     | SPI Clock |
-| SDA/MOSI    | GPIO3     | SPI Data |
-| CS          | GPIO1     | Chip Select |
-| DC          | GPIO4     | Data/Command |
-| RST         | GPIO5     | Reset |
-| BLK         | 3.3V      | Backlight (connect to 3.3V) |
-
-### UART Debug (Optional)
-- TX: GPIO16
-- RX: GPIO17
-- Baud: 115200
+```cpp
+ST7789V_Config_t config = {
+    .spi_instance = spi1,           // SPI peripheral (spi0 or spi1)
+    .pin_dc = 8,                    // Data/Command pin
+    .pin_cs = 9,                    // Chip Select pin  
+    .pin_rst = 6,                   // Reset pin
+    .pin_sck = 10,                  // SPI Clock pin
+    .pin_mosi = 11,                 // SPI MOSI pin
+    .pin_backlight = 12,            // Backlight control (optional)
+    .backlight_active_low = true,   // Backlight polarity
+    .color_inversion = false        // Use INVOFF (recommended)
+};
+```
 
 ## Quick Start
 
-### 1. Basic Setup
+### 1. Include the Library
 
 ```cpp
-#include "pico/stdlib.h"
-#include "hardware/spi.h"
-#include "lib/st7789.h"
-#include "lib/gfx.h"
+#include "lib/st7789v.h"
+```
 
-int main() {
-    // Initialize UART for debugging
-    stdio_init_all();
-    sleep_ms(2000);
-    
-    // Configure SPI and pins
-    spi_inst_t *spi = spi0;
-    LCD_setPins(4, 1, 5, 2, 3);  // DC, CS, RST, SCK, TX
-    LCD_setSPIperiph(spi);
-    
-    // Initialize display
-    LCD_initDisplay(170, 320);  // Width, Height
-    LCD_setRotation(2);         // 180° rotation (adjust as needed)
-    
-    // Create framebuffer
-    GFX_createFramebuf();
-    
-    // Your drawing code here...
-    
-    return 0;
+### 2. Initialize Display
+
+```cpp
+ST7789V_Config_t config = {
+    // ... configure pins as above
+};
+
+if (!ST7789V_Init(&config)) {
+    printf("Display initialization failed!\n");
+    return -1;
 }
 ```
 
-### 2. Drawing Text
+### 3. Clear Screen
 
 ```cpp
-// Set text properties
-GFX_setTextSize(2);           // 2x scaling
-GFX_setTextColor(0xFFFF);     // White text
-GFX_setCursor(10, 10);        // Position cursor
-
-// Draw text
-GFX_printf("Hello World!");
-GFX_flush();                  // Update display
+ST7789V_ClearScreen(ST7789V_COLOR_BLACK);
 ```
 
-### 3. Drawing Shapes
+### 4. Draw Graphics
 
 ```cpp
-// Fill screen with black
-GFX_fillScreen(ST77XX_BLACK);
-
 // Draw colored rectangles
-GFX_fillRect(10, 50, 60, 30, ST77XX_RED);
-GFX_fillRect(10, 90, 60, 30, ST77XX_GREEN);
-GFX_fillRect(10, 130, 60, 30, ST77XX_BLUE);
+ST7789V_DrawRectangle(10, 10, 20, 15, ST7789V_COLOR_RED);
+ST7789V_DrawRectangle(35, 10, 20, 15, ST7789V_COLOR_GREEN);
 
-// Draw circle
-GFX_drawCircle(100, 100, 20, ST77XX_YELLOW);
+// Draw individual pixels
+ST7789V_DrawPixel(50, 50, ST7789V_COLOR_BLUE);
+```
 
-// Draw border
-GFX_drawRect(0, 0, 170, 320, ST77XX_WHITE);
+### 5. Render Text
 
-// Update display
-GFX_flush();
+```cpp
+// Draw text strings
+ST7789V_DrawText("HELLO", 10, 30, ST7789V_COLOR_WHITE);
+ST7789V_DrawText("WORLD", 10, 45, ST7789V_COLOR_CYAN);
+
+// Draw individual characters
+ST7789V_DrawChar('A', 10, 60, ST7789V_COLOR_YELLOW);
 ```
 
 ## API Reference
 
-### LCD Functions (st7789.h)
+### Initialization Functions
 
-#### Initialization
-```cpp
-void LCD_setPins(uint16_t dc, uint16_t cs, int16_t rst, uint16_t sck, uint16_t tx);
-void LCD_setSPIperiph(spi_inst_t *s);
-void LCD_initDisplay(uint16_t width, uint16_t height);
-```
+- `bool ST7789V_Init(const ST7789V_Config_t* config)` - Initialize display with configuration
+- `void ST7789V_SetBacklight(bool enabled)` - Control backlight state
+- `void ST7789V_SetColorInversion(bool inverted)` - Control color inversion
 
-#### Display Control
-```cpp
-void LCD_setRotation(uint8_t m);  // 0=0°, 1=90°, 2=180°, 3=270°
-void LCD_WritePixel(int x, int y, uint16_t col);
-void LCD_WriteBitmap(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t *bitmap);
-```
+### Drawing Functions
 
-### GFX Functions (gfx.h)
+- `void ST7789V_DrawPixel(uint16_t x, uint16_t y, uint16_t color)` - Draw single pixel
+- `void ST7789V_DrawRawPixel(uint16_t x, uint16_t y, uint16_t color)` - Draw pixel with raw coordinates
+- `void ST7789V_DrawRectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color)` - Draw filled rectangle
+- `void ST7789V_ClearScreen(uint16_t color)` - Clear entire display
 
-#### Framebuffer Management
-```cpp
-void GFX_createFramebuf();    // Must call before drawing
-void GFX_destroyFramebuf();
-void GFX_flush();             // Update display with framebuffer
-```
+### Text Rendering Functions
 
-#### Text Functions
-```cpp
-void GFX_setCursor(int16_t x, int16_t y);
-void GFX_setTextColor(uint16_t color);
-void GFX_setTextSize(uint8_t size);
-void GFX_printf(const char *format, ...);
-```
+- `uint8_t ST7789V_DrawChar(char c, uint16_t x, uint16_t y, uint16_t color)` - Draw single character
+- `uint16_t ST7789V_DrawText(const char* text, uint16_t x, uint16_t y, uint16_t color)` - Draw text string
 
-#### Drawing Functions
-```cpp
-void GFX_drawPixel(int16_t x, int16_t y, uint16_t color);
-void GFX_drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color);
-void GFX_drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-void GFX_fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-void GFX_drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-void GFX_fillCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
-void GFX_fillScreen(uint16_t color);
-```
+### Utility Functions
 
-#### Bitmap Functions
-```cpp
-void GFX_drawBitmap(int16_t x, int16_t y, const uint8_t *bitmap, 
-                    int16_t w, int16_t h, uint16_t color, uint16_t bg);
-void GFX_drawBitmapMask(int16_t x, int16_t y, const uint8_t *bitmap, 
-                        int16_t w, int16_t h, uint16_t color);
-```
-
-## Logo Support
-
-This library includes support for displaying custom monochrome bitmaps, such as logos. A complete example is provided with the Bartola logo integration.
-
-### Adding Your Logo
-
-1. **Convert your image** to monochrome bitmap format (see [LOGO_CONVERSION.md](LOGO_CONVERSION.md))
-2. **Create a header file** with your bitmap data:
-
-```cpp
-// my_logo.h
-#define MY_LOGO_WIDTH  100
-#define MY_LOGO_HEIGHT 50
-
-const unsigned char my_logo_bitmap[] = {
-    0x00, 0x00, 0x1F, 0xFF, 0x80,  // Your bitmap data here
-    // ... more data
-};
-```
-
-3. **Draw your logo**:
-
-```cpp
-#include "my_logo.h"
-
-// Draw logo with transparent background
-GFX_drawBitmapMask(10, 10, my_logo_bitmap, MY_LOGO_WIDTH, MY_LOGO_HEIGHT, ST77XX_WHITE);
-
-// Or with solid background
-GFX_drawBitmap(10, 10, my_logo_bitmap, MY_LOGO_WIDTH, MY_LOGO_HEIGHT, 
-               ST77XX_WHITE, ST77XX_BLACK);
-```
-
-### Bartola Logo Example
-
-The library includes a complete example showing how to integrate a custom logo:
-
-- `bartola_logo_bitmap.h` - Logo bitmap data and constants
-- `drawBartolaLogo()` and `drawBartolaLogoScaled()` functions in main program
-- See [LOGO_CONVERSION.md](LOGO_CONVERSION.md) for conversion instructions
+- `void ST7789V_TranslateCoordinates(uint16_t logical_x, uint16_t logical_y, uint16_t* display_x, uint16_t* display_y)` - Convert logical to display coordinates
+- `void ST7789V_GetUsableDimensions(uint16_t* width, uint16_t* height)` - Get usable display area
 
 ## Predefined Colors
 
-Use these predefined color constants:
+| Color | Value | RGB565 |
+|-------|-------|--------|
+| `ST7789V_COLOR_BLACK` | 0x0000 | Black |
+| `ST7789V_COLOR_WHITE` | 0xFFFF | White |
+| `ST7789V_COLOR_RED` | 0xF800 | Red |
+| `ST7789V_COLOR_GREEN` | 0x07E0 | Green |
+| `ST7789V_COLOR_BLUE` | 0x001F | Blue |
+| `ST7789V_COLOR_YELLOW` | 0xFFE0 | Yellow |
+| `ST7789V_COLOR_CYAN` | 0x07FF | Cyan |
+| `ST7789V_COLOR_MAGENTA` | 0xF81F | Magenta |
 
-```cpp
-ST77XX_BLACK     // 0x0000
-ST77XX_WHITE     // 0xFFFF
-ST77XX_RED       // 0xF800
-ST77XX_GREEN     // 0x07E0
-ST77XX_BLUE      // 0x001F
-ST77XX_CYAN      // 0x07FF
-ST77XX_MAGENTA   // 0xF81F
-ST77XX_YELLOW    // 0xFFE0
-ST77XX_ORANGE    // 0xFC00
-```
+## Coordinate System
 
-Or create custom colors:
-```cpp
-uint16_t purple = GFX_RGB565(128, 0, 128);  // RGB to RGB565
-```
+The library uses **logical coordinates** (0-based) that are automatically translated to the display's working coordinate range:
 
-## Build Configuration
+- **Logical coordinates**: (0,0) to (64,209) - What you specify in code
+- **Display coordinates**: (60,40) to (125,250) - Actual hardware coordinates
+- **Virtual coordinates**: (0,0) to (320,400) - Used for screen clearing
 
-### CMakeLists.txt
+## Font System
+
+Built-in 5×7 pixel bitmap font supports:
+- **Uppercase letters**: A-Z
+- **Digits**: 0-9  
+- **Basic symbols**: Space, hyphen, underscore, period, colon, exclamation
+
+Each character is 5 pixels wide, 7 pixels tall, with 1 pixel spacing (6 pixels total width).
+
+## Build Instructions
+
+Add to your CMakeLists.txt:
+
 ```cmake
-add_executable(your_project main.cpp lib/st7789.cpp lib/gfx.cpp)
-
-target_include_directories(your_project PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}
-    ${CMAKE_CURRENT_LIST_DIR}/lib
+add_executable(your_project
+    your_main.cpp
+    lib/st7789v.c
 )
 
 target_link_libraries(your_project
     pico_stdlib
     hardware_spi
-    hardware_dma
-)
-
-# UART configuration (optional)
-target_compile_definitions(your_project PRIVATE
-    PICO_DEFAULT_UART_TX_PIN=16
-    PICO_DEFAULT_UART_RX_PIN=17
+    hardware_gpio
 )
 ```
 
-## Troubleshooting
+## Examples
 
-### Display Issues
+See `ST7789v_example.cpp` for a comprehensive demonstration of all library features.
 
-**Blank Screen:**
-- Check BLK/Backlight pin is connected to 3.3V
-- Verify all connections match the pinout table
-- Ensure proper power supply (3.3V)
+## Technical Notes
 
-**Upside Down Display:**
-- Try different rotation values (0, 1, 2, 3)
-- Most common fix: `LCD_setRotation(2)` for 180° flip
+### Display Variants
 
-**Offset/Clipped Content:**
-- The library automatically handles 170x320 display offsets
-- For other sizes, check the offset calculations in `LCD_initDisplay()`
+This library is specifically optimized for ST7789v displays with:
+- MIPI SPI interface
+- 90° rotation configuration  
+- Specific offset requirements (width=18, height=82)
 
-**Text Too Large:**
-- Use `GFX_setTextSize(1)` for smallest text
-- Size 2 is good for readability on 170x320 displays
+### Performance Optimizations
 
-### Build Issues
+- Direct SPI register access for maximum speed
+- Efficient coordinate translation
+- Optimized screen clearing algorithm
+- Minimal memory footprint
 
-**Missing Headers:**
-- Ensure `lib` directory is in include paths
-- Check CMakeLists.txt configuration
+### Color Inversion
 
-**Link Errors:**
-- Verify all required libraries are linked
-- Check pico-sdk installation
-
-## Example Projects
-
-### Simple Text Display
-```cpp
-#include "pico/stdlib.h"
-#include "lib/st7789.h"
-#include "lib/gfx.h"
-
-int main() {
-    stdio_init_all();
-    sleep_ms(2000);
-    
-    spi_inst_t *spi = spi0;
-    LCD_setPins(4, 1, 5, 2, 3);
-    LCD_setSPIperiph(spi);
-    LCD_initDisplay(170, 320);
-    LCD_setRotation(2);
-    
-    GFX_createFramebuf();
-    GFX_setTextSize(2);
-    GFX_setTextColor(ST77XX_WHITE);
-    
-    int counter = 0;
-    while (1) {
-        GFX_fillScreen(ST77XX_BLACK);
-        GFX_setCursor(10, 10);
-        GFX_printf("Counter: %d", counter++);
-        GFX_flush();
-        sleep_ms(1000);
-    }
-}
-```
+ST7789v displays typically require **INVOFF** (color inversion disabled) for correct color display. This differs from standard ST7789 displays that may require INVON.
 
 ## License
 
-This library is based on Adafruit's GFX library and modified for Raspberry Pi Pico.
+MIT License - See LICENSE file for details.
 
-## References 
+## Author
 
-
-https://github.com/libdriver/st7789
-
-
-## Contributing
-
-Feel free to submit issues and enhancement requests!
+Ale Moglia, 2025
 
 ## Changelog
 
-### v1.0 (04/08/2025)
+### v1.0.0 (2025-01-XX)
 - Initial release
-- Support for 170x320 displays with automatic offset correction
-- Framebuffer-based graphics system
-- Complete text rendering with variable font sizes
-- Shape drawing functions
-- Hardware SPI optimization
+- Complete ST7789v support with empirically discovered coordinate mappings
+- Built-in bitmap font system
+- Hardware-optimized SPI communication
+- Comprehensive API with logical coordinate translation

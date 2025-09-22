@@ -21,9 +21,21 @@
 #include "lib/st7789.h"
 #include "lib/gfx.h"
 
-/** @brief Display dimensions for 76x264 ST7789 LCD - CORRECTED ORIENTATION */
+/** @brief ST7789v specific configuration constants */
+const int ST7789V_WIDTH_OFFSET = 18;   ///< Width offset for ST7789v variant
+const int ST7789V_HEIGHT_OFFSET = 82;  ///< Height offset for ST7789v variant
+const int ST7789V_ROTATED_WIDTH = 284; ///< Width after 90° rotation
+const int ST7789V_ROTATED_HEIGHT = 76; ///< Height after 90° rotation
+
+/** @brief Working coordinate ranges discovered through testing */
+const int WORKING_X_MIN = 60;  ///< Minimum working X coordinate
+const int WORKING_X_MAX = 125; ///< Maximum working X coordinate
+const int WORKING_Y_MIN = 40;  ///< Minimum working Y coordinate
+const int WORKING_Y_MAX = 250; ///< Maximum working Y coordinate
+
+/** @brief Display dimensions for 76x284 ST7789 LCD - CORRECTED ORIENTATION */
 const int lcd_width = 76;   ///< Display width in pixels (narrow side)
-const int lcd_height = 264; ///< Display height in pixels (tall side)
+const int lcd_height = 284; ///< Display height in pixels (tall side)
 
 /**
  * @brief Main program entry point
@@ -39,7 +51,7 @@ int main()
 
     // Allow time for UART initialization and connection
     sleep_ms(2000);
-    printf("Starting ST7789 DIRECT PIXEL test for 76x264 display...\n");
+    printf("Starting ST7789v DIRECT PIXEL test for ST7789v display (284x76 rotated)...\n");
 
     // Configure SPI peripheral instance
     spi_inst_t *st7789_spi = spi1;

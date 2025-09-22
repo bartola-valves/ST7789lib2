@@ -65,5 +65,23 @@ target_include_directories(ST7789lib2 PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/lib
 )
 
-pico_add_extra_outputs(ST7789lib2)
+# Add executable for new ST7789v library example  
+add_executable(ST7789v_example
+    ST7789v_example.cpp
+    lib/st7789v.c
+)
+
+# Link ST7789v example with required libraries
+target_link_libraries(ST7789v_example
+    pico_stdlib
+    hardware_spi 
+    hardware_gpio
+)
+
+# Enable USB and UART output for ST7789v example
+pico_enable_stdio_usb(ST7789v_example 1)
+pico_enable_stdio_uart(ST7789v_example 1)
+
+# Create map/bin/hex/uf2 files for ST7789v example
+pico_add_extra_outputs(ST7789v_example)
 
