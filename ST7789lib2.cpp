@@ -116,62 +116,93 @@ int main()
             gpio_put(9, 1);
         };
 
-        printf("STEP 1: COMPLETE clearing - extending to cover bottom 20%...\n");
-
-        // Based on your feedback: 80% cleared, bottom missing
-        // Extend coordinate ranges to cover the entire display
-        printf("Clearing EXTENDED coordinate ranges to cover full display...\n");
-
-        // Clear range 1: Top area (0,0 to 320,160)
-        printf("Clearing range 1: (0,0) to (320,160)...\n");
-        for (int y = 0; y < 160; y++)
+        // FAST CLEAR SCREEN function - using bulk write
+        auto fastClearScreen = [](uint16_t color)
         {
-            for (int x = 0; x < 320; x++)
-            {
-                drawRawPixel(x, y, 0x0000); // Black
-            }
-            if (y % 20 == 0)
-                printf("Top area row %d/160\n", y);
-        }
+            printf("FAST CLEAR: Setting display window to full screen...\n");
 
-        // Clear range 2: Middle area (0,160 to 320,264)
-        printf("Clearing range 2: (0,160) to (320,264)...\n");
-        for (int y = 160; y < 264; y++)
-        {
-            for (int x = 0; x < 320; x++)
-            {
-                drawRawPixel(x, y, 0x0000); // Black
-            }
-            if ((y - 160) % 20 == 0)
-                printf("Middle area row %d/104\n", y - 160);
-        }
+            // Set column address window (0 to 319)
+            gpio_put(9, 0);
+            gpio_put(8, 0);
+            uint8_t caset_cmd = 0x2A;
+            spi_write_blocking(spi1, &caset_cmd, 1);
+            gpio_put(8, 1);
+            uint8_t caset_data[] = {0x00, 0x00, 0x01, 0x3F}; // 0 to 319
+            spi_write_blocking(spi1, caset_data, 4);
+            gpio_put(9, 1);
 
-        // Clear range 3: EXTENDED bottom area (0,264 to 320,350) - for missing 20%
-        printf("Clearing range 3: EXTENDED bottom (0,264) to (320,350) - missing 20%...\n");
-        for (int y = 264; y < 350; y++)
-        {
-            for (int x = 0; x < 320; x++)
-            {
-                drawRawPixel(x, y, 0x0000); // Black
-            }
-            if ((y - 264) % 20 == 0)
-                printf("Extended bottom row %d/86\n", y - 264);
-        }
+            // Set row address window (0 to 399)
+            gpio_put(9, 0);
+            gpio_put(8, 0);
+            uint8_t raset_cmd = 0x2B;
+            spi_write_blocking(spi1, &raset_cmd, 1);
+            gpio_put(8, 1);
+            uint8_t raset_data[] = {0x00, 0x00, 0x01, 0x8F}; // 0 to 399
+            spi_write_blocking(spi1, raset_data, 4);
+            gpio_put(9, 1);
 
-        // Clear range 4: Even more extended (0,350 to 320,400) - just in case
-        printf("Clearing range 4: Final extension (0,350) to (320,400)...\n");
-        for (int y = 350; y < 400; y++)
-        {
-            for (int x = 0; x < 320; x++)
-            {
-                drawRawPixel(x, y, 0x0000); // Black
-            }
-            if ((y - 350) % 10 == 0)
-                printf("Final extension row %d/50\n", y - 350);
-        }
+            // Start memory write
+            gpio_put(9, 0);
+            gpio_put(8, 0);
+            uint8_t ramwr_cmd = 0x2C;
+            spi_write_blocking(spi1, &ramwr_cmd, 1);
+            gpio_put(8, 1);
 
-        printf("COMPLETE clearing finished! Bottom 20% should be covered now!\n");
-        sleep_ms(3000);
+            printf("FAST CLEAR: Writing color data in bulk...\n");
+
+            // Switch to 16-bit SPI mode
+            spi_set_format(spi1, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+
+            // Create buffer for bulk write (1000 pixels at a time)
+            const int buffer_size = 1000;
+            uint16_t color_buffer[buffer_size];
+            for (int i = 0; i < buffer_size; i++)
+            {
+                color_buffer[i] = color;
+            }
+
+            // Calculate total pixels (320 x 400 = 128,000 pixels)
+            const int total_pixels = 320 * 400;
+            const int chunks = total_pixels / buffer_size;
+
+            // Write in chunks for speed
+            for (int chunk = 0; chunk < chunks; chunk++)
+            {
+                spi_write16_blocking(spi1, color_buffer, buffer_size);
+
+                if (chunk % 20 == 0)
+                {
+                    printf("FAST CLEAR: Chunk %d/%d (%.1f%%)\n",
+                           chunk, chunks, (float)chunk / chunks * 100);
+                }
+            }
+
+            // Write remaining pixels
+            int remaining = total_pixels % buffer_size;
+            if (remaining > 0)
+            {
+                spi_write16_blocking(spi1, color_buffer, remaining);
+            }
+
+            // Switch back to 8-bit SPI mode
+            spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+            gpio_put(9, 1);
+
+            printf("FAST CLEAR: Complete! Screen cleared in bulk.\n");
+        };
+
+        printf("STEP 1: FAST CLEAR SCREEN TEST...\n");
+
+        // Time the fast clear
+        absolute_time_t start_time = get_absolute_time();
+        fastClearScreen(0x0000); // Clear to black
+        absolute_time_t end_time = get_absolute_time();
+
+        int64_t clear_time_us = absolute_time_diff_us(start_time, end_time);
+        printf("FAST CLEAR completed in %lld microseconds (%.2f ms)!\n",
+               clear_time_us, clear_time_us / 1000.0);
+
+        sleep_ms(2000);
 
         printf("STEP 2: Drawing all rectangles in the SAME working coordinate area...\n");
 
