@@ -28,29 +28,33 @@ set(PICO_BOARD pico CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-# Change project name to match our new target
-project(ST7789v_hello_test C CXX ASM)
+project(ST7789lib2 C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-# Add executable for simple medium font test - ONLY TARGET
-add_executable(ST7789v_hello_test
-    ST7789v_hello_test.cpp
-    lib/st7789v.c
-)
+# Add executable. Default name is the project name, version 0.1
+add_executable(ST7789lib2 ST7789lib2.cpp lib/st7789.cpp lib/gfx.cpp )
 
-# Link libraries
-target_link_libraries(ST7789v_hello_test
-    pico_stdlib
-    hardware_spi
-    hardware_gpio
-)
+pico_set_program_name(ST7789lib2 "ST7789lib2")
+pico_set_program_version(ST7789lib2 "0.1")
 
-# Enable UART output (USB disabled for this test)
-pico_enable_stdio_usb(ST7789v_hello_test 0)
-pico_enable_stdio_uart(ST7789v_hello_test 1)
+# Modify the below lines to enable/disable output over UART/USB
+pico_enable_stdio_uart(ST7789lib2 1)
+pico_enable_stdio_usb(ST7789lib2 0)
+
+# Add the standard library to the build
+target_link_libraries(ST7789lib2
+        pico_stdlib
+        hardware_spi
+        hardware_dma)
+
+# Add the standard include files to the build
+target_include_directories(ST7789lib2 PRIVATE
+        ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/lib
+)
 
 # Create map/bin/hex/uf2 files
-pico_add_extra_outputs(ST7789v_hello_test)
+pico_add_extra_outputs(ST7789lib2)
 

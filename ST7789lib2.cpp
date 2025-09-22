@@ -318,9 +318,54 @@ int main()
         drawChar('O', 110, 200, 0xF800);          // Red O
 
         printf("TEXT RENDERING FULLY FUNCTIONAL!\n");
+
+        // STEP 4: MEDIUM FONT TEST - Add one large character
+        printf("STEP 4: Testing MEDIUM font (10x14 pixels)...\n");
+
+        // Medium font 'H' pattern - 10x14 pixels (double-sized)
+        // Using uint16_t to store 10-bit patterns
+        uint16_t medium_font_H[14] = {
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1111111111, // ██████████
+            0b1111111111, // ██████████
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1100000011, // ██      ██
+            0b1100000011  // ██      ██
+        };
+
+        auto drawMediumChar = [&](uint16_t *pattern, int start_x, int start_y, uint16_t color)
+        {
+            printf("Drawing medium character at (%d,%d)...\n", start_x, start_y);
+            for (int row = 0; row < 14; row++)
+            {
+                for (int col = 0; col < 10; col++)
+                {
+                    if (pattern[row] & (1 << (9 - col))) // 10-bit pattern, MSB first
+                    {
+                        drawRawPixel(start_x + col, start_y + row, color);
+                    }
+                }
+            }
+        };
+
+        // Draw one medium 'H' - positioned to the right of normal text
+        printf("Drawing medium 'H' (10x14 pixels)...\n");
+        drawMediumChar(medium_font_H, 92, 215, 0x07E0); // Green medium H
+
+        printf("Medium font 'H' should be visible and much larger!\n");
+
         printf("Your ST7789 display now has:\n");
         printf("- Complete color graphics capability\n");
         printf("- Full text rendering with custom fonts\n");
+        printf("- NEW: Medium font capability (10x14 pixels)\n");
         printf("- Perfect coordinate system mapping\n");
         printf("- Ready for Eurorack projects!\n");
 
