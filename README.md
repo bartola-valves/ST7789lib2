@@ -106,8 +106,15 @@ ST7789V_DrawChar('A', 10, 60, ST7789V_COLOR_YELLOW);
 
 ### Text Rendering Functions
 
-- `uint8_t ST7789V_DrawChar(char c, uint16_t x, uint16_t y, uint16_t color)` - Draw single character
-- `uint16_t ST7789V_DrawText(const char* text, uint16_t x, uint16_t y, uint16_t color)` - Draw text string
+- `uint8_t ST7789V_DrawChar(char c, uint16_t x, uint16_t y, uint16_t color)` - Draw single character (5×7 font)
+- `uint16_t ST7789V_DrawText(const char* text, uint16_t x, uint16_t y, uint16_t color)` - Draw text string (5×7 font)
+- `uint8_t ST7789V_DrawCharMedium(char c, uint16_t x, uint16_t y, uint16_t color)` - Draw single character (10×14 font)
+- `uint16_t ST7789V_DrawTextMedium(const char* text, uint16_t x, uint16_t y, uint16_t color)` - Draw text string (10×14 font)
+
+### Screen Management Functions
+
+- `void ST7789V_ClearScreen(uint16_t color)` - Clear display (pixel-by-pixel, slower)
+- `void ST7789V_FastClearScreen(uint16_t color)` - Fast clear display (bulk SPI, much faster)
 
 ### Utility Functions
 
@@ -137,12 +144,29 @@ The library uses **logical coordinates** (0-based) that are automatically transl
 
 ## Font System
 
-Built-in 5×7 pixel bitmap font supports:
-- **Uppercase letters**: A-Z
-- **Digits**: 0-9  
-- **Basic symbols**: Space, hyphen, underscore, period, colon, exclamation
+The library includes two built-in bitmap font sizes:
 
-Each character is 5 pixels wide, 7 pixels tall, with 1 pixel spacing (6 pixels total width).
+### Small Font (5×7 pixels)
+- **Characters supported**: A-Z, 0-9, basic symbols
+- **Character size**: 5 pixels wide × 7 pixels tall  
+- **Total width**: 6 pixels (including 1 pixel spacing)
+- **Use case**: Dense text, status information
+
+```cpp
+ST7789V_DrawText("STATUS: OK", 10, 10, ST7789V_COLOR_GREEN);
+```
+
+### Medium Font (10×14 pixels)
+- **Characters supported**: A-Z, space
+- **Character size**: 10 pixels wide × 14 pixels tall
+- **Total width**: 12 pixels (including 2 pixel spacing)  
+- **Use case**: Main display text, better visibility
+
+```cpp
+ST7789V_DrawTextMedium("HELLO", 10, 50, ST7789V_COLOR_WHITE);
+```
+
+Both fonts use bitmap patterns for crisp, pixel-perfect rendering.
 
 ## Build Instructions
 

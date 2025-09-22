@@ -187,6 +187,44 @@ extern "C"
     uint16_t ST7789V_DrawText(const char *text, uint16_t x, uint16_t y, uint16_t color);
 
     /**
+     * @brief Draw a text string using medium bitmap font (10×14)
+     *
+     * Renders a null-terminated string with automatic character spacing
+     * using the larger, more visible medium font.
+     *
+     * @param text Null-terminated string to draw
+     * @param x X coordinate for text start
+     * @param y Y coordinate for text start
+     * @param color 16-bit RGB565 color value
+     * @return Total text width in pixels
+     */
+    uint16_t ST7789V_DrawTextMedium(const char *text, uint16_t x, uint16_t y, uint16_t color);
+
+    /**
+     * @brief Draw a single character using medium bitmap font (10×14)
+     *
+     * Renders a character using built-in medium bitmap font patterns.
+     * Supports characters: A-Z and space.
+     *
+     * @param c Character to draw
+     * @param x X coordinate for character top-left
+     * @param y Y coordinate for character top-left
+     * @param color 16-bit RGB565 color value
+     * @return Character width in pixels (12 including spacing)
+     */
+    uint8_t ST7789V_DrawCharMedium(char c, uint16_t x, uint16_t y, uint16_t color);
+
+    /**
+     * @brief Fast clear entire display to specified color
+     *
+     * Optimized screen clearing using bulk SPI operations instead of
+     * pixel-by-pixel clearing for much faster performance.
+     *
+     * @param color 16-bit RGB565 color value (typically ST7789V_COLOR_BLACK)
+     */
+    void ST7789V_FastClearScreen(uint16_t color);
+
+    /**    /**
      * @brief Set backlight state
      *
      * Controls display backlight if backlight pin is configured.

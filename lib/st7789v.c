@@ -17,11 +17,10 @@
  */
 
 #include "st7789v.h"
+#include "medium-font.h"
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
-#include <string.h>
-
-// ==================== Static Variables ====================
+#include <string.h> // ==================== Static Variables ====================
 
 static ST7789V_Config_t current_config; ///< Current display configuration
 static bool is_initialized = false;     ///< Initialization state flag
@@ -261,6 +260,42 @@ uint16_t ST7789V_DrawText(const char *text, uint16_t x, uint16_t y, uint16_t col
     return current_x - x; // Total text width
 }
 
+uint8_t ST7789V_DrawCharMedium(char c, uint16_t x, uint16_t y, uint16_t color)
+{
+    // Get font pattern for character from medium font
+    const uint16_t *pattern = medium_font_10x14[(uint8_t)c];
+
+    // Draw character if pattern exists
+    if (pattern)
+    {
+        for (int row = 0; row < MEDIUM_FONT_HEIGHT; row++)
+        {
+            for (int col = 0; col < MEDIUM_FONT_WIDTH; col++)
+            {
+                if (pattern[row] & (1 << (MEDIUM_FONT_WIDTH - 1 - col)))
+                {
+                    ST7789V_DrawPixel(x + col, y + row, color);
+                }
+            }
+        }
+    }
+
+    return MEDIUM_FONT_SPACING; // Character width including spacing
+}
+
+uint16_t ST7789V_DrawTextMedium(const char *text, uint16_t x, uint16_t y, uint16_t color)
+{
+    uint16_t current_x = x;
+
+    while (*text)
+    {
+        current_x += ST7789V_DrawCharMedium(*text, current_x, y, color);
+        text++;
+    }
+
+    return current_x - x; // Total text width
+}
+
 void ST7789V_SetBacklight(bool enabled)
 {
     if (current_config.pin_backlight != 255)
@@ -300,4 +335,44 @@ void ST7789V_GetUsableDimensions(uint16_t *width, uint16_t *height)
 {
     *width = ST7789V_WORKING_X_MAX - ST7789V_WORKING_X_MIN;
     *height = ST7789V_WORKING_Y_MAX - ST7789V_WORKING_Y_MIN;
+}
+
+void ST7789V_FastClearScreen(uint16_t color)
+{
+    if (!is_initialized)
+        return;
+
+    // Set full display window
+    send_command(ST7789V_CMD_CASET);
+    uint8_t caset_data[] = {0x00, 0x00, 0x01, 0x40}; // 0 to 320
+    send_data(caset_data, 4);
+
+    send_command(ST7789V_CMD_RASET);
+    uint8_t raset_data[] = {0x00, 0x00, 0x01, 0x90}; // 0 to 400
+    send_data(raset_data, 4);
+
+    // Start RAM write
+    send_command(ST7789V_CMD_RAMWR);
+
+    // Write color data in bulk
+    gpio_put(current_config.pin_cs, 0); // CS low
+    gpio_put(current_config.pin_dc, 1); // DC high (data)
+    spi_set_format(current_config.spi_instance, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+
+    // Clear in chunks for speed
+    const int chunk_size = 1000;
+    uint16_t color_buffer[chunk_size];
+    for (int i = 0; i < chunk_size; i++)
+    {
+        color_buffer[i] = color;
+    }
+
+    // Write enough chunks to cover the display
+    for (int chunk = 0; chunk < 320; chunk++)
+    { // 320 chunks of 1000 pixels = 320,000 pixels
+        spi_write16_blocking(current_config.spi_instance, color_buffer, chunk_size);
+    }
+
+    spi_set_format(current_config.spi_instance, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    gpio_put(current_config.pin_cs, 1); // CS high
 }
